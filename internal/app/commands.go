@@ -36,7 +36,8 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 		fmt.Fprintln(cmd.OutOrStdout(), "Downloader OK")
 		return nil
 	}})
-	dl.AddCommand(&cobra.Command{Use: "list", Short: "List downloads", RunE: func(cmd *cobra.Command, args []string) error {
+	var listLabel string
+	list := &cobra.Command{Use: "list", Short: "List downloads", RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := e.load("download")
 		if err != nil {
 			return err
@@ -50,10 +51,15 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 			return err
 		}
 		for _, it := range items {
-			fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%.0f%%\t%s\n", it.Handle.ID, it.Status, it.Progress*100, it.Title)
+			if listLabel != "" && !containsString(it.Labels, listLabel) {
+				continue
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%.0f%%\t%s\t%s\n", it.Handle.ID, it.Status, it.Progress*100, strings.Join(it.Labels, ","), it.Title)
 		}
 		return nil
-	}})
+	}}
+	list.Flags().StringVar(&listLabel, "label", "", "filter downloads by label")
+	dl.AddCommand(list)
 	dl.AddCommand(&cobra.Command{Use: "dirs", Short: "List configured download directory aliases", RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := e.load("download")
 		if err != nil {
@@ -87,7 +93,8 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		h, err := d.Add(cmd.Context(), download.AddDownloadRequest{URL: url, DownloadDir: resolvedDir})
+		labels := defaultDownloadLabels(cfg)
+		h, err := d.Add(cmd.Context(), download.AddDownloadRequest{URL: url, DownloadDir: resolvedDir, Labels: labels})
 		if err != nil {
 			return err
 		}
@@ -97,7 +104,6 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 	add.Flags().StringVar(&url, "url", "", "magnet or torrent URL")
 	add.Flags().StringVar(&dir, "dir", "", "download directory override or alias")
 	dl.AddCommand(add)
-	return dl
 	return dl
 }
 
@@ -111,6 +117,22 @@ func splitTitleYear(q string) (string, int) {
 	}
 	y, _ := strconv.Atoi(m[2])
 	return strings.TrimSpace(m[1]), y
+}
+
+func defaultDownloadLabels(cfg *config.Config) []string {
+	if cfg.Download.Label == nil || *cfg.Download.Label == "" {
+		return nil
+	}
+	return []string{*cfg.Download.Label}
+}
+
+func containsString(items []string, want string) bool {
+	for _, item := range items {
+		if item == want {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *commandEnv) searchCommand() *cobra.Command {

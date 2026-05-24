@@ -79,6 +79,7 @@ app:
   log_level: info
 
 download:
+  label: "tomaccio"
   dir_aliases:
     movies: "/media/usb-drive/movies"
     series: "/media/usb-drive/series"
@@ -95,8 +96,7 @@ watched:
     token: "${PLEX_TOKEN}"
 ```
 
-Environment variables in YAML are expanded when the config is loaded, so secrets can stay out of files committed to git.
-
+Environment variables in YAML are expanded when the config is loaded, so secrets can stay out of files committed to git. If `download.label` is omitted, tomaccio defaults to the Transmission label `tomaccio`; set `download.label: ""` to disable labels entirely.
 ### Search providers
 
 Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). If `search.providers` is omitted, tomaccio uses the default public indexers: `yts`, `1337x`, and `thepiratebay`.
@@ -142,12 +142,13 @@ List current Transmission downloads.
 
 ```bash
 tomaccio download list
+tomaccio download list --label tomaccio
 ```
 
 Output format:
 
 ```text
-<ID>    <status>    <progress%>    <title>
+<ID>    <status>    <progress%>    <labels>    <title>
 ```
 
 ### `download dirs`
@@ -178,6 +179,8 @@ tomaccio download add --dir /path/to/movies "magnet:?xt=urn:btih:..."
 # or use a configured alias
 tomaccio download add --dir movies "magnet:?xt=urn:btih:..."
 ```
+
+Tomaccio applies the configured `download.label` to added torrents. If `download.label` is omitted, it defaults to `tomaccio`. If it is set to an empty string, no label is sent.
 
 ### `search`
 

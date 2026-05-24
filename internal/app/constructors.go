@@ -12,7 +12,11 @@ import (
 
 func newDownloader(cfg *config.Config) (download.Downloader, error) {
 	t := cfg.Download.Transmission
-	return transmission.New(t.URL, t.Username, t.Password, t.DownloadDir), nil
+	label := ""
+	if cfg.Download.Label != nil {
+		label = *cfg.Download.Label
+	}
+	return transmission.New(t.URL, t.Username, t.Password, t.DownloadDir, label), nil
 }
 
 func newSearchProviders(cfg *config.Config) ([]search.Provider, []search.ProviderError) {

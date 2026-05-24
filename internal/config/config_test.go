@@ -30,3 +30,20 @@ func TestValidateSearchAllowsDefaultPublicProviders(t *testing.T) {
 		t.Fatalf("Validate() error = %v", err)
 	}
 }
+
+func TestApplyDefaultsSetsDefaultDownloadLabel(t *testing.T) {
+	cfg := &Config{}
+	cfg.ApplyDefaults()
+	if cfg.Download.Label == nil || *cfg.Download.Label != "tomaccio" {
+		t.Fatalf("label = %#v", cfg.Download.Label)
+	}
+}
+
+func TestApplyDefaultsPreservesExplicitEmptyDownloadLabel(t *testing.T) {
+	empty := ""
+	cfg := &Config{Download: DownloadConfig{Label: &empty}}
+	cfg.ApplyDefaults()
+	if cfg.Download.Label == nil || *cfg.Download.Label != "" {
+		t.Fatalf("label = %#v", cfg.Download.Label)
+	}
+}

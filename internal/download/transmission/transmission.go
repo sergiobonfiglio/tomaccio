@@ -23,6 +23,7 @@ type Client struct {
 	username    string
 	password    string
 	downloadDir string
+	label       string
 	httpClient  *http.Client
 	mu          sync.Mutex
 	sessionID   string
@@ -32,8 +33,8 @@ type Option func(*Client)
 
 func WithHTTPClient(h *http.Client) Option { return func(c *Client) { c.httpClient = h } }
 
-func New(url, username, password, downloadDir string, opts ...Option) *Client {
-	c := &Client{url: url, username: username, password: password, downloadDir: downloadDir, httpClient: &http.Client{Timeout: 30 * time.Second}}
+func New(url, username, password, downloadDir, label string, opts ...Option) *Client {
+	c := &Client{url: url, username: username, password: password, downloadDir: downloadDir, label: label, httpClient: &http.Client{Timeout: 30 * time.Second}}
 	for _, opt := range opts {
 		opt(c)
 	}
@@ -52,6 +53,9 @@ func (c *Client) Add(ctx context.Context, req download.AddDownloadRequest) (*dow
 	args := map[string]any{"filename": req.URL}
 	if dir := firstNonEmpty(req.DownloadDir, c.downloadDir); dir != "" {
 		args["download-dir"] = dir
+	}
+	if labels := firstNonEmptyLabels(req.Labels, defaultLabels(c.label)); len(labels) > 0 {
+		args["labels"] = labels
 	}
 	body, err := c.rpc(ctx, "torrent-add", args)
 	if err != nil {
@@ -83,7 +87,7 @@ func (c *Client) Add(ctx context.Context, req download.AddDownloadRequest) (*dow
 }
 
 func (c *Client) List(ctx context.Context) ([]download.DownloadStatus, error) {
-	statuses, err := c.torrentGet(ctx, []string{"id", "name", "percentDone", "status"}, nil)
+	statuses, err := c.torrentGet(ctx, []string{"id", "name", "percentDone", "status", "labels"}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +99,7 @@ func (c *Client) Get(ctx context.Context, handle download.DownloadHandle) (*down
 	if err != nil {
 		return nil, fmt.Errorf("invalid transmission id %q", handle.ID)
 	}
-	statuses, err := c.torrentGet(ctx, []string{"id", "name", "percentDone", "status"}, []int{id})
+	statuses, err := c.torrentGet(ctx, []string{"id", "name", "percentDone", "status", "labels"}, []int{id})
 	if err != nil {
 		return nil, err
 	}
@@ -126,10 +130,11 @@ func (c *Client) torrentGet(ctx context.Context, fields []string, ids []int) ([]
 	var out struct {
 		Arguments struct {
 			Torrents []struct {
-				ID          int     `json:"id"`
-				Name        string  `json:"name"`
-				PercentDone float64 `json:"percentDone"`
-				Status      int     `json:"status"`
+				ID          int      `json:"id"`
+				Name        string   `json:"name"`
+				PercentDone float64  `json:"percentDone"`
+				Status      int      `json:"status"`
+				Labels      []string `json:"labels"`
 			} `json:"torrents"`
 		} `json:"arguments"`
 	}
@@ -138,7 +143,13 @@ func (c *Client) torrentGet(ctx context.Context, fields []string, ids []int) ([]
 	}
 	statuses := make([]download.DownloadStatus, 0, len(out.Arguments.Torrents))
 	for _, t := range out.Arguments.Torrents {
-		statuses = append(statuses, download.DownloadStatus{Handle: download.DownloadHandle{Provider: "transmission", ID: strconv.Itoa(t.ID)}, Title: t.Name, Progress: t.PercentDone, Status: mapStatus(t.Status, t.PercentDone)})
+		statuses = append(statuses, download.DownloadStatus{
+			Handle:   download.DownloadHandle{Provider: "transmission", ID: strconv.Itoa(t.ID)},
+			Title:    t.Name,
+			Progress: t.PercentDone,
+			Status:   mapStatus(t.Status, t.PercentDone),
+			Labels:   t.Labels,
+		})
 	}
 	return statuses, nil
 }
@@ -170,7 +181,6 @@ func (c *Client) rpc(ctx context.Context, method string, args any) ([]byte, erro
 		body, readErr := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 		resp.Body.Close()
 		if resp.StatusCode == http.StatusConflict && resp.Header.Get(sessionHeader) != "" {
-			// Transmission intentionally returns 409 until callers echo this token.
 			c.mu.Lock()
 			c.sessionID = resp.Header.Get(sessionHeader)
 			c.mu.Unlock()
@@ -214,6 +224,20 @@ func mapStatus(status int, progress float64) string {
 
 func firstNonEmpty(a, b string) string {
 	if a != "" {
+		return a
+	}
+	return b
+}
+
+func defaultLabels(label string) []string {
+	if strings.TrimSpace(label) == "" {
+		return nil
+	}
+	return []string{label}
+}
+
+func firstNonEmptyLabels(a, b []string) []string {
+	if len(a) > 0 {
 		return a
 	}
 	return b

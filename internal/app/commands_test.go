@@ -31,9 +31,10 @@ type stubWatchedProvider struct {
 }
 
 type stubDownloader struct {
-	handle *download.DownloadHandle
-	addReq download.AddDownloadRequest
-	addErr error
+	handle   *download.DownloadHandle
+	addReq   download.AddDownloadRequest
+	addErr   error
+	statuses []download.DownloadStatus
 }
 
 func (d *stubDownloader) Test(context.Context) error { return nil }
@@ -47,7 +48,9 @@ func (d *stubDownloader) Add(_ context.Context, req download.AddDownloadRequest)
 	}
 	return &download.DownloadHandle{Provider: "transmission", ID: "1"}, nil
 }
-func (d *stubDownloader) List(context.Context) ([]download.DownloadStatus, error) { return nil, nil }
+func (d *stubDownloader) List(context.Context) ([]download.DownloadStatus, error) {
+	return d.statuses, nil
+}
 func (d *stubDownloader) Get(context.Context, download.DownloadHandle) (*download.DownloadStatus, error) {
 	return nil, nil
 }
@@ -162,6 +165,76 @@ func TestDownloadDirsCommandListsAliases(t *testing.T) {
 	}
 	if out.String() != "movies\t/media/movies\nseries\t/media/series\n" {
 		t.Fatalf("unexpected output %q", out.String())
+	}
+}
+
+func TestDownloadListCommandShowsLabelsAndFiltersByLabel(t *testing.T) {
+	dl := &stubDownloader{statuses: []download.DownloadStatus{
+		{Handle: download.DownloadHandle{Provider: "transmission", ID: "1"}, Status: "downloading", Progress: 0.5, Labels: []string{"tomaccio", "movies"}, Title: "The Matrix"},
+		{Handle: download.DownloadHandle{Provider: "transmission", ID: "2"}, Status: "seeding", Progress: 1, Labels: []string{"other"}, Title: "Other"},
+	}}
+	env := &commandEnv{
+		loadConfig: func(string) (*config.Config, error) {
+			return &config.Config{Download: config.DownloadConfig{Transmission: config.DownloadTransmissionConfig{URL: "http://transmission"}}}, nil
+		},
+		downloader: func(*config.Config) (download.Downloader, error) { return dl, nil },
+	}
+	cmd := env.downloadCommand()
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs([]string{"list", "--label", "tomaccio"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	text := out.String()
+	if !strings.Contains(text, "1\tdownloading\t50%\ttomaccio,movies\tThe Matrix") {
+		t.Fatalf("unexpected output %q", text)
+	}
+	if strings.Contains(text, "Other") {
+		t.Fatalf("expected label filter to exclude non-matching downloads: %q", text)
+	}
+}
+
+func TestDownloadAddCommandUsesDefaultTomaccioLabel(t *testing.T) {
+	dl := &stubDownloader{handle: &download.DownloadHandle{Provider: "transmission", ID: "42"}}
+	env := &commandEnv{
+		loadConfig: func(string) (*config.Config, error) {
+			cfg := &config.Config{Download: config.DownloadConfig{Transmission: config.DownloadTransmissionConfig{URL: "http://transmission"}}}
+			cfg.ApplyDefaults()
+			return cfg, nil
+		},
+		downloader: func(*config.Config) (download.Downloader, error) { return dl, nil },
+	}
+	cmd := env.downloadCommand()
+	cmd.SetArgs([]string{"add", "magnet:?xt=urn:btih:abc"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if len(dl.addReq.Labels) != 1 || dl.addReq.Labels[0] != "tomaccio" {
+		t.Fatalf("labels = %#v", dl.addReq.Labels)
+	}
+}
+
+func TestDownloadAddCommandRespectsEmptyLabelOverride(t *testing.T) {
+	dl := &stubDownloader{handle: &download.DownloadHandle{Provider: "transmission", ID: "42"}}
+	empty := ""
+	env := &commandEnv{
+		loadConfig: func(string) (*config.Config, error) {
+			return &config.Config{Download: config.DownloadConfig{Label: &empty, Transmission: config.DownloadTransmissionConfig{URL: "http://transmission"}}}, nil
+		},
+		downloader: func(*config.Config) (download.Downloader, error) { return dl, nil },
+	}
+	cmd := env.downloadCommand()
+	cmd.SetArgs([]string{"add", "magnet:?xt=urn:btih:abc"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if len(dl.addReq.Labels) != 0 {
+		t.Fatalf("labels = %#v", dl.addReq.Labels)
 	}
 }
 

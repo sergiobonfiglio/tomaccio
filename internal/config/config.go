@@ -21,6 +21,7 @@ type AppConfig struct {
 }
 
 type DownloadConfig struct {
+	Label        *string                    `yaml:"label"`
 	DirAliases   map[string]string          `yaml:"dir_aliases"`
 	Transmission DownloadTransmissionConfig `yaml:"transmission"`
 }
@@ -71,6 +72,10 @@ func Load(path string) (*Config, error) {
 func (c *Config) ApplyDefaults() {
 	if c.App.LogLevel == "" {
 		c.App.LogLevel = "info"
+	}
+	if c.Download.Label == nil {
+		label := "tomaccio"
+		c.Download.Label = &label
 	}
 }
 

@@ -12,9 +12,10 @@ type Downloader interface {
 }
 
 type AddDownloadRequest struct {
-	URL         string `json:"url"`
-	DownloadDir string `json:"download_dir"`
-	Title       string `json:"title"`
+	URL         string   `json:"url"`
+	DownloadDir string   `json:"download_dir"`
+	Labels      []string `json:"labels"`
+	Title       string   `json:"title"`
 }
 
 type DownloadHandle struct {
@@ -27,4 +28,5 @@ type DownloadStatus struct {
 	Title    string         `json:"title"`
 	Status   string         `json:"status"`
 	Progress float64        `json:"progress"`
+	Labels   []string       `json:"labels"`
 }

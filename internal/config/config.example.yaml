@@ -2,6 +2,7 @@ app:
   log_level: info
 
 download:
+  label: "tomaccio"
   dir_aliases:
     movies: "/media/usb-drive/movies"
     series: "/media/usb-drive/series"
