@@ -8,13 +8,7 @@ download:
     password: "${TRANSMISSION_PASSWORD}"
     download_dir: "/media/usb-drive/movies"
 
-search:
-  providers:
-    - name: "yts"
-      indexer_id: "yts"
-      base_url: "https://yts.mx"
-      timeout_seconds: 15
-
+# search.providers is optional. If omitted, tomaccio uses default public indexers.
 watched:
   plex:
     url: "http://plex.example.com:32400"

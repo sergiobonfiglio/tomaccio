@@ -9,6 +9,7 @@ Tomaccio is intentionally lightweight. It has no database, no background daemon,
 - Search configured release providers through [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet).
 - Add magnet or torrent URLs to Transmission.
 - List current Transmission downloads and progress.
+- Sync public indexer definitions for first-run setup.
 - Read watched movie history from Plex.
 - Emit watched movies as JSON by default for easy scripting.
 - Keep secrets out of config files with `${ENV_VAR}` expansion.
@@ -18,7 +19,7 @@ Tomaccio is intentionally lightweight. It has no database, no background daemon,
 - Go 1.26 or newer
 - A Transmission RPC endpoint for download commands
 - A Plex server and token for `tomaccio watched`
-- One or more tomagnet indexer definitions for search commands
+- Synced tomagnet indexer definitions for search commands (`tomaccio definitions sync`)
 
 ## Installation
 
@@ -55,6 +56,7 @@ export PLEX_TOKEN='...'
 Run commands:
 
 ```bash
+./tomaccio definitions sync
 ./tomaccio download check
 ./tomaccio search "The Matrix 1999"
 ./tomaccio watched
@@ -83,13 +85,7 @@ download:
     password: "${TRANSMISSION_PASSWORD}"
     download_dir: "/media/usb-drive/movies"
 
-search:
-  providers:
-    - name: "yts"
-      indexer_id: "yts"
-      base_url: "https://yts.mx"
-      timeout_seconds: 15
-
+# search.providers is optional. If omitted, tomaccio uses default public indexers.
 watched:
   plex:
     url: "http://plex.example.com:32400"
@@ -100,21 +96,34 @@ Environment variables in YAML are expanded when the config is loaded, so secrets
 
 ### Search providers
 
-Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). Each provider requires:
+Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). If `search.providers` is omitted, tomaccio uses the default public indexers: `yts`, `1337x`, and `thepiratebay`.
+
+Before the first public-indexer search, sync definitions into `./.tomaccio/definitions`:
+
+```bash
+tomaccio definitions sync
+```
+
+Tomaccio loads synced definitions from `./.tomaccio/definitions/<indexer_id>.yml|yaml` and passes them to tomagnet in memory; no `.tomagnet/definitions` setup is required.
+
+Custom providers can be configured with:
 
 - `name`: display name used in results and warnings
 - `indexer_id`: tomagnet indexer definition id
 - `base_url`: optional indexer base URL override
 - `timeout_seconds`: optional per-provider timeout
 
-Definitions are resolved from:
-
-1. `./definitions/<indexer_id>.yml|yaml`
-2. `./.tomagnet/definitions/<indexer_id>.yml|yaml`
-
 Provider failures are printed as warnings while successful providers still return results.
 
 ## Commands
+
+### `definitions sync`
+
+Download public indexer definitions into `./.tomaccio/definitions`.
+
+```bash
+tomaccio definitions sync
+```
 
 ### `download check`
 

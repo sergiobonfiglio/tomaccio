@@ -99,7 +99,6 @@ func validateDownload(c *Config, missing *[]string) {
 
 func validateSearch(c *Config, missing *[]string) {
 	if len(c.Search.Providers) == 0 {
-		*missing = append(*missing, "search.providers")
 		return
 	}
 	for i, p := range c.Search.Providers {

@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sergiobonfiglio/tomaccio/internal/config"
+	"github.com/sergiobonfiglio/tomaccio/internal/definitions"
 	"github.com/sergiobonfiglio/tomaccio/internal/download"
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
 	"github.com/sergiobonfiglio/tomaccio/internal/watched"
@@ -19,6 +20,7 @@ type commandEnv struct {
 	downloader      func(*config.Config) (download.Downloader, error)
 	searchProviders func(*config.Config) ([]search.Provider, []search.ProviderError)
 	watchedProvider func(*config.Config) (watched.Provider, error)
+	definitionsSync func() (definitions.Metadata, error)
 }
 
 func NewRootCommand() *cobra.Command {
@@ -28,7 +30,7 @@ func NewRootCommand() *cobra.Command {
 		Short: "Taste Oriented Media Assistant Accio",
 	}
 	root.PersistentFlags().StringVar(&env.configPath, "config", "./config.yaml", "path to YAML config file")
-	root.AddCommand(env.downloadCommand(), env.searchCommand(), env.watchedCommand())
+	root.AddCommand(env.downloadCommand(), env.searchCommand(), env.watchedCommand(), env.definitionsCommand())
 	return root
 }
 

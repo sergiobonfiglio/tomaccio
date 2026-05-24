@@ -23,3 +23,10 @@ func TestValidateWatchedAcceptsPlexConfig(t *testing.T) {
 		t.Fatalf("Validate() error = %v", err)
 	}
 }
+
+func TestValidateSearchAllowsDefaultPublicProviders(t *testing.T) {
+	cfg := &Config{}
+	if err := cfg.Validate("search"); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+}

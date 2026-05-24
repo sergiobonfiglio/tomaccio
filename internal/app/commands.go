@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sergiobonfiglio/tomaccio/internal/config"
+	"github.com/sergiobonfiglio/tomaccio/internal/definitions"
 	"github.com/sergiobonfiglio/tomaccio/internal/download"
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
 	"github.com/sergiobonfiglio/tomaccio/internal/watched"
@@ -159,6 +160,23 @@ func (e *commandEnv) watchedCommand() *cobra.Command {
 	}}
 	cmd.Flags().StringVar(&format, "format", "json", "output format: json or text")
 	return cmd
+}
+
+func (e *commandEnv) definitionsCommand() *cobra.Command {
+	defs := &cobra.Command{Use: "definitions", Short: "Indexer definition commands"}
+	defs.AddCommand(&cobra.Command{Use: "sync", Short: "Download public indexer definitions", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
+		sync := e.definitionsSync
+		if sync == nil {
+			sync = definitions.Sync
+		}
+		m, err := sync()
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "synced %d definitions to %s\n", len(m.Files), definitions.CacheDir)
+		return nil
+	}})
+	return defs
 }
 
 func (e *commandEnv) newDownloader(cfg *config.Config) (download.Downloader, error) {

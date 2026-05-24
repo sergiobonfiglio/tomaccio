@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
@@ -21,7 +22,7 @@ func TestSearchMovieUsesLocalDefinition(t *testing.T) {
 	defer server.Close()
 
 	tempDir := t.TempDir()
-	definitionsDir := filepath.Join(tempDir, "definitions")
+	definitionsDir := filepath.Join(tempDir, ".tomaccio", "definitions")
 	if err := os.MkdirAll(definitionsDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -95,5 +96,29 @@ search:
 	}
 	if releases[0].Published != "2026-05-20T12:00:00Z" {
 		t.Fatalf("published = %q", releases[0].Published)
+	}
+}
+
+func TestSearchMovieReportsMissingDefinition(t *testing.T) {
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if chdirErr := os.Chdir(oldWD); chdirErr != nil {
+			t.Fatalf("restore cwd: %v", chdirErr)
+		}
+	}()
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatal(err)
+	}
+
+	client := New("missing", "missing", "auto", 5)
+	_, err = client.SearchMovie(context.Background(), search.MovieSearchQuery{Title: "Dune"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "tomaccio definitions sync") {
+		t.Fatalf("error = %q", err.Error())
 	}
 }

@@ -3,7 +3,7 @@ module github.com/sergiobonfiglio/tomaccio
 go 1.26.1
 
 require (
-	github.com/sergiobonfiglio/tomagnet v0.1.0
+	github.com/sergiobonfiglio/tomagnet v0.3.1
 	github.com/spf13/cobra v1.8.1
 	gopkg.in/yaml.v3 v3.0.1
 )

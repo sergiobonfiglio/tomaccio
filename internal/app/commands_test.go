@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sergiobonfiglio/tomaccio/internal/config"
+	"github.com/sergiobonfiglio/tomaccio/internal/definitions"
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
 	"github.com/sergiobonfiglio/tomaccio/internal/watched"
 )
@@ -102,5 +103,23 @@ func TestWatchedCommandPrintsJSON(t *testing.T) {
 	}
 	if len(got) != 1 || got[0].Title != "The Matrix" || got[0].Year != 1999 || got[0].Rating == nil || *got[0].Rating != rating {
 		t.Fatalf("items=%#v", got)
+	}
+}
+
+func TestDefinitionsSyncCommandPrintsSyncedCount(t *testing.T) {
+	env := &commandEnv{definitionsSync: func() (definitions.Metadata, error) {
+		return definitions.Metadata{Files: []string{"yts.yml", "1337x.yml"}}, nil
+	}}
+	cmd := env.definitionsCommand()
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs([]string{"sync"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if !strings.Contains(out.String(), "synced 2 definitions to .tomaccio/definitions") {
+		t.Fatalf("unexpected output %q", out.String())
 	}
 }

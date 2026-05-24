@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sergiobonfiglio/tomaccio/internal/definitions"
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
 	tomagnetlib "github.com/sergiobonfiglio/tomagnet/pkg/tomagnet"
 )
@@ -25,12 +26,22 @@ func New(name, indexerID, baseURL string, timeoutSeconds int) *Client {
 func (c *Client) Name() string { return c.name }
 
 func (c *Client) SearchMovie(ctx context.Context, q search.MovieSearchQuery) ([]search.Release, error) {
+	path, err := definitions.Path(c.indexerID)
+	if err != nil {
+		return nil, err
+	}
+	definition, err := tomagnetlib.LoadDefinition(path)
+	if err != nil {
+		return nil, fmt.Errorf("load definition %q: %w", path, err)
+	}
+
 	resp := tomagnetlib.Search(ctx, tomagnetlib.SearchOptions{
 		Query: buildQuery(q),
 		Indexers: []tomagnetlib.Indexer{{
 			ID:             c.indexerID,
 			BaseURL:        c.baseURL,
 			TimeoutSeconds: c.timeoutSeconds,
+			Definition:     definition,
 		}},
 		Concurrency: 1,
 	})
