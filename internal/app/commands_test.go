@@ -147,6 +147,46 @@ func TestDefinitionsSyncCommandPrintsSyncedCount(t *testing.T) {
 	}
 }
 
+func TestDownloadDirsCommandListsAliases(t *testing.T) {
+	env := &commandEnv{loadConfig: func(string) (*config.Config, error) {
+		return &config.Config{Download: config.DownloadConfig{DirAliases: map[string]string{"series": "/media/series", "movies": "/media/movies"}, Transmission: config.DownloadTransmissionConfig{URL: "http://transmission"}}}, nil
+	}}
+	cmd := env.downloadCommand()
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs([]string{"dirs"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if out.String() != "movies\t/media/movies\nseries\t/media/series\n" {
+		t.Fatalf("unexpected output %q", out.String())
+	}
+}
+
+func TestDownloadAddCommandResolvesDirAlias(t *testing.T) {
+	dl := &stubDownloader{handle: &download.DownloadHandle{Provider: "transmission", ID: "42"}}
+	env := &commandEnv{
+		loadConfig: func(string) (*config.Config, error) {
+			return &config.Config{Download: config.DownloadConfig{DirAliases: map[string]string{"movies": "/media/movies"}, Transmission: config.DownloadTransmissionConfig{URL: "http://transmission"}}}, nil
+		},
+		downloader: func(*config.Config) (download.Downloader, error) { return dl, nil },
+	}
+	cmd := env.downloadCommand()
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs([]string{"add", "--dir", "movies", "magnet:?xt=urn:btih:abc"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if dl.addReq.DownloadDir != "/media/movies" {
+		t.Fatalf("download dir = %q", dl.addReq.DownloadDir)
+	}
+}
+
 func TestDownloadAddCommandPassesDirOverride(t *testing.T) {
 	dl := &stubDownloader{handle: &download.DownloadHandle{Provider: "transmission", ID: "42"}}
 	env := &commandEnv{

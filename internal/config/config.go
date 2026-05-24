@@ -21,6 +21,7 @@ type AppConfig struct {
 }
 
 type DownloadConfig struct {
+	DirAliases   map[string]string          `yaml:"dir_aliases"`
 	Transmission DownloadTransmissionConfig `yaml:"transmission"`
 }
 

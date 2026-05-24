@@ -2,12 +2,14 @@ app:
   log_level: info
 
 download:
+  dir_aliases:
+    movies: "/media/usb-drive/movies"
+    series: "/media/usb-drive/series"
   transmission:
     url: "https://transmission.example.com/transmission/rpc"
     username: "${TRANSMISSION_USERNAME}"
     password: "${TRANSMISSION_PASSWORD}"
     download_dir: "/media/usb-drive/movies"
-
 # search.providers is optional. If omitted, tomaccio uses default public indexers.
 watched:
   plex:

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -53,6 +54,21 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 		}
 		return nil
 	}})
+	dl.AddCommand(&cobra.Command{Use: "dirs", Short: "List configured download directory aliases", RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := e.load("download")
+		if err != nil {
+			return err
+		}
+		keys := make([]string, 0, len(cfg.Download.DirAliases))
+		for key := range cfg.Download.DirAliases {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", key, cfg.Download.DirAliases[key])
+		}
+		return nil
+	}})
 	var url string
 	var dir string
 	add := &cobra.Command{Use: "add [URL]", Short: "Add magnet/torrent URL", Args: cobra.MaximumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
@@ -63,11 +79,15 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 		if url == "" && len(args) > 0 {
 			url = args[0]
 		}
+		resolvedDir := dir
+		if aliasDir, ok := cfg.Download.DirAliases[dir]; ok {
+			resolvedDir = aliasDir
+		}
 		d, err := e.newDownloader(cfg)
 		if err != nil {
 			return err
 		}
-		h, err := d.Add(cmd.Context(), download.AddDownloadRequest{URL: url, DownloadDir: dir})
+		h, err := d.Add(cmd.Context(), download.AddDownloadRequest{URL: url, DownloadDir: resolvedDir})
 		if err != nil {
 			return err
 		}
@@ -75,9 +95,9 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 		return nil
 	}}
 	add.Flags().StringVar(&url, "url", "", "magnet or torrent URL")
-	add.Flags().StringVar(&dir, "dir", "", "download directory override")
+	add.Flags().StringVar(&dir, "dir", "", "download directory override or alias")
 	dl.AddCommand(add)
-	dl.AddCommand(add)
+	return dl
 	return dl
 }
 

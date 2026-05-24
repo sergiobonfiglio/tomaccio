@@ -79,6 +79,9 @@ app:
   log_level: info
 
 download:
+  dir_aliases:
+    movies: "/media/usb-drive/movies"
+    series: "/media/usb-drive/series"
   transmission:
     url: "https://transmission.example.com/transmission/rpc"
     username: "${TRANSMISSION_USERNAME}"
@@ -147,6 +150,21 @@ Output format:
 <ID>    <status>    <progress%>    <title>
 ```
 
+### `download dirs`
+
+List configured download directory aliases.
+
+```bash
+tomaccio download dirs
+```
+
+Output format:
+
+```text
+movies	/media/usb-drive/movies
+series	/media/usb-drive/series
+```
+
 ### `download add`
 
 Add a magnet or torrent URL to Transmission.
@@ -155,8 +173,10 @@ Add a magnet or torrent URL to Transmission.
 tomaccio download add "magnet:?xt=urn:btih:..."
 # or
 tomaccio download add --url "magnet:?xt=urn:btih:..."
-# override download directory for this item
+# override download directory for this item with a path
 tomaccio download add --dir /path/to/movies "magnet:?xt=urn:btih:..."
+# or use a configured alias
+tomaccio download add --dir movies "magnet:?xt=urn:btih:..."
 ```
 
 ### `search`
