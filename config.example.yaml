@@ -1,0 +1,21 @@
+app:
+  log_level: info
+
+download:
+  transmission:
+    url: "https://transmission.example.com/transmission/rpc"
+    username: "${TRANSMISSION_USERNAME}"
+    password: "${TRANSMISSION_PASSWORD}"
+    download_dir: "/media/usb-drive/movies"
+
+search:
+  providers:
+    - name: "yts"
+      indexer_id: "yts"
+      base_url: "https://yts.mx"
+      timeout_seconds: 15
+
+watched:
+  plex:
+    url: "http://plex.example.com:32400"
+    token: "${PLEX_TOKEN}"

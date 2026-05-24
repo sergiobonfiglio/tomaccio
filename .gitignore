@@ -1,0 +1,30 @@
+# Local config and secrets
+/config.yaml
+/config.old.yaml
+/*.local.yaml
+/.env
+/.tomaccio/
+/.tomagnet
+
+# Local state files
+*.db
+*.db-shm
+*.db-wal
+
+# Build artifacts
+/tomaccio
+/bin/
+
+# Generated reports and agent state
+/.ralph/
+
+# Local workspace files
+/docs/
+/legacy/
+/lodestar/
+/go.work
+
+# OS/editor noise
+.DS_Store
+.vscode/
+tomaccio.code-workspace

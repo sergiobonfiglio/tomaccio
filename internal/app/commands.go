@@ -1,0 +1,209 @@
+package app
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/spf13/cobra"
+
+	"github.com/sergiobonfiglio/tomaccio/internal/config"
+	"github.com/sergiobonfiglio/tomaccio/internal/download"
+	"github.com/sergiobonfiglio/tomaccio/internal/search"
+	"github.com/sergiobonfiglio/tomaccio/internal/watched"
+)
+
+func (e *commandEnv) downloadCommand() *cobra.Command {
+	dl := &cobra.Command{Use: "download", Short: "Downloader commands"}
+	dl.AddCommand(&cobra.Command{Use: "check", Short: "Check downloader connectivity", RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := e.load("download")
+		if err != nil {
+			return err
+		}
+		d, err := e.newDownloader(cfg)
+		if err != nil {
+			return err
+		}
+		if err := d.Test(cmd.Context()); err != nil {
+			return err
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Downloader OK")
+		return nil
+	}})
+	dl.AddCommand(&cobra.Command{Use: "list", Short: "List downloads", RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := e.load("download")
+		if err != nil {
+			return err
+		}
+		d, err := e.newDownloader(cfg)
+		if err != nil {
+			return err
+		}
+		items, err := d.List(cmd.Context())
+		if err != nil {
+			return err
+		}
+		for _, it := range items {
+			fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%.0f%%\t%s\n", it.Handle.ID, it.Status, it.Progress*100, it.Title)
+		}
+		return nil
+	}})
+	var url string
+	add := &cobra.Command{Use: "add [URL]", Short: "Add magnet/torrent URL", Args: cobra.MaximumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := e.load("download")
+		if err != nil {
+			return err
+		}
+		if url == "" && len(args) > 0 {
+			url = args[0]
+		}
+		d, err := e.newDownloader(cfg)
+		if err != nil {
+			return err
+		}
+		h, err := d.Add(cmd.Context(), download.AddDownloadRequest{URL: url})
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "Added %s:%s\n", h.Provider, h.ID)
+		return nil
+	}}
+	add.Flags().StringVar(&url, "url", "", "magnet or torrent URL")
+	dl.AddCommand(add)
+	return dl
+}
+
+var titleYearRE = regexp.MustCompile(`^(.+?)\s*\(?([12][0-9]{3})\)?$`)
+
+func splitTitleYear(q string) (string, int) {
+	q = strings.TrimSpace(q)
+	m := titleYearRE.FindStringSubmatch(q)
+	if len(m) != 3 {
+		return q, 0
+	}
+	y, _ := strconv.Atoi(m[2])
+	return strings.TrimSpace(m[1]), y
+}
+
+func (e *commandEnv) searchCommand() *cobra.Command {
+	return &cobra.Command{Use: "search QUERY", Short: "Search configured movie release providers", Args: cobra.MinimumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		ctx, cancel := context.WithTimeout(cmd.Context(), 45*time.Second)
+		defer cancel()
+		cfg, err := e.load("search")
+		if err != nil {
+			return err
+		}
+		title, year := splitTitleYear(strings.Join(args, " "))
+		result := e.searchReleases(ctx, cfg, search.MovieSearchQuery{Title: title, Year: year})
+		for _, err := range result.Errors {
+			fmt.Fprintf(cmd.OutOrStdout(), "WARN provider error: provider=%s stage=%s message=%s\n", err.Provider, err.Stage, err.Message)
+		}
+
+		for i, r := range result.Releases {
+			fmt.Fprintf(cmd.OutOrStdout(),
+				"%d. %s (%s, seeders=%d, %.2fGB) %s\n",
+				i+1,
+				r.Title,
+				r.Provider,
+				r.Seeders,
+				// TODO: size in human-readable format, not fixed GB
+				float64(r.SizeBytes)/(1024*1024*1024),
+				r.URL)
+		}
+		return nil
+	}}
+}
+
+func (e *commandEnv) watchedCommand() *cobra.Command {
+	var format string
+	cmd := &cobra.Command{Use: "watched", Short: "List watched movies", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := e.load("watched")
+		if err != nil {
+			return err
+		}
+		provider, err := e.newWatchedProvider(cfg)
+		if err != nil {
+			return err
+		}
+		items, err := provider.ListWatchedMovies(cmd.Context())
+		if err != nil {
+			return err
+		}
+		switch format {
+		case "", "json":
+			enc := json.NewEncoder(cmd.OutOrStdout())
+			enc.SetIndent("", "  ")
+			return enc.Encode(items)
+		case "text":
+			for _, item := range items {
+				parts := []string{item.Title}
+				if item.Year > 0 {
+					parts = append(parts, strconv.Itoa(item.Year))
+				}
+				if item.Rating != nil {
+					parts = append(parts, fmt.Sprintf("%.1f", *item.Rating))
+				}
+				if item.WatchedAt != nil {
+					parts = append(parts, item.WatchedAt.UTC().Format(time.RFC3339))
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), strings.Join(parts, "\t"))
+			}
+			return nil
+		default:
+			return fmt.Errorf("unsupported format %q", format)
+		}
+	}}
+	cmd.Flags().StringVar(&format, "format", "json", "output format: json or text")
+	return cmd
+}
+
+func (e *commandEnv) newDownloader(cfg *config.Config) (download.Downloader, error) {
+	if e.downloader != nil {
+		return e.downloader(cfg)
+	}
+	return newDownloader(cfg)
+}
+
+func (e *commandEnv) newSearchProviders(cfg *config.Config) ([]search.Provider, []search.ProviderError) {
+	if e.searchProviders != nil {
+		return e.searchProviders(cfg)
+	}
+	return newSearchProviders(cfg)
+}
+
+func (e *commandEnv) newWatchedProvider(cfg *config.Config) (watched.Provider, error) {
+	if e.watchedProvider != nil {
+		return e.watchedProvider(cfg)
+	}
+	return newWatchedProvider(cfg)
+}
+
+func (e *commandEnv) searchReleases(ctx context.Context, cfg *config.Config, q search.MovieSearchQuery) search.Result {
+	providers, errs := e.newSearchProviders(cfg)
+	result := search.Result{Errors: errs}
+	for i, p := range providers {
+		rels, err := p.SearchMovie(ctx, q)
+		if err != nil {
+			result.Errors = append(result.Errors, search.ProviderError{Provider: providerName(i, p, rels), Stage: "search", Message: err.Error()})
+			continue
+		}
+		result.Releases = append(result.Releases, rels...)
+	}
+	return result
+}
+
+func providerName(i int, p search.Provider, rels []search.Release) string {
+	if named, ok := p.(interface{ Name() string }); ok && named.Name() != "" {
+		return named.Name()
+	}
+	for _, r := range rels {
+		if r.Provider != "" {
+			return r.Provider
+		}
+	}
+	return fmt.Sprintf("provider-%d", i+1)
+}
