@@ -155,6 +155,8 @@ Add a magnet or torrent URL to Transmission.
 tomaccio download add "magnet:?xt=urn:btih:..."
 # or
 tomaccio download add --url "magnet:?xt=urn:btih:..."
+# override download directory for this item
+tomaccio download add --dir /path/to/movies "magnet:?xt=urn:btih:..."
 ```
 
 ### `search`

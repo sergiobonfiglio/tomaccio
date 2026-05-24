@@ -54,6 +54,7 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 		return nil
 	}})
 	var url string
+	var dir string
 	add := &cobra.Command{Use: "add [URL]", Short: "Add magnet/torrent URL", Args: cobra.MaximumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := e.load("download")
 		if err != nil {
@@ -66,7 +67,7 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 		if err != nil {
 			return err
 		}
-		h, err := d.Add(cmd.Context(), download.AddDownloadRequest{URL: url})
+		h, err := d.Add(cmd.Context(), download.AddDownloadRequest{URL: url, DownloadDir: dir})
 		if err != nil {
 			return err
 		}
@@ -74,6 +75,8 @@ func (e *commandEnv) downloadCommand() *cobra.Command {
 		return nil
 	}}
 	add.Flags().StringVar(&url, "url", "", "magnet or torrent URL")
+	add.Flags().StringVar(&dir, "dir", "", "download directory override")
+	dl.AddCommand(add)
 	dl.AddCommand(add)
 	return dl
 }

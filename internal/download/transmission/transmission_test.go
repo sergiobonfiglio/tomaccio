@@ -19,7 +19,8 @@ func TestClientNegotiatesSessionAndAddsTorrent(t *testing.T) {
 		}
 		sawSession = true
 		var req struct {
-			Method string `json:"method"`
+			Method    string         `json:"method"`
+			Arguments map[string]any `json:"arguments"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			t.Fatal(err)
@@ -27,12 +28,15 @@ func TestClientNegotiatesSessionAndAddsTorrent(t *testing.T) {
 		if req.Method != "torrent-add" {
 			t.Fatalf("method = %s", req.Method)
 		}
+		if req.Arguments["download-dir"] != "/media/movies" {
+			t.Fatalf("download-dir = %#v", req.Arguments["download-dir"])
+		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"result": "success", "arguments": map[string]any{"torrent-added": map[string]any{"id": 42}}})
 	}))
 	defer server.Close()
 
 	client := New(server.URL, "", "", "")
-	h, err := client.Add(t.Context(), download.AddDownloadRequest{URL: "magnet:?xt=urn:btih:test"})
+	h, err := client.Add(t.Context(), download.AddDownloadRequest{URL: "magnet:?xt=urn:btih:test", DownloadDir: "/media/movies"})
 	if err != nil {
 		t.Fatal(err)
 	}

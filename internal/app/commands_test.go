@@ -11,6 +11,7 @@ import (
 
 	"github.com/sergiobonfiglio/tomaccio/internal/config"
 	"github.com/sergiobonfiglio/tomaccio/internal/definitions"
+	"github.com/sergiobonfiglio/tomaccio/internal/download"
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
 	"github.com/sergiobonfiglio/tomaccio/internal/watched"
 )
@@ -29,6 +30,28 @@ type stubWatchedProvider struct {
 	err   error
 }
 
+type stubDownloader struct {
+	handle *download.DownloadHandle
+	addReq download.AddDownloadRequest
+	addErr error
+}
+
+func (d *stubDownloader) Test(context.Context) error { return nil }
+func (d *stubDownloader) Add(_ context.Context, req download.AddDownloadRequest) (*download.DownloadHandle, error) {
+	d.addReq = req
+	if d.addErr != nil {
+		return nil, d.addErr
+	}
+	if d.handle != nil {
+		return d.handle, nil
+	}
+	return &download.DownloadHandle{Provider: "transmission", ID: "1"}, nil
+}
+func (d *stubDownloader) List(context.Context) ([]download.DownloadStatus, error) { return nil, nil }
+func (d *stubDownloader) Get(context.Context, download.DownloadHandle) (*download.DownloadStatus, error) {
+	return nil, nil
+}
+func (d *stubDownloader) Cancel(context.Context, download.DownloadHandle) error { return nil }
 func (p stubWatchedProvider) ListWatchedMovies(context.Context) ([]watched.Item, error) {
 	return p.items, p.err
 }
@@ -120,6 +143,34 @@ func TestDefinitionsSyncCommandPrintsSyncedCount(t *testing.T) {
 		t.Fatalf("Execute() error = %v", err)
 	}
 	if !strings.Contains(out.String(), "synced 2 definitions to .tomaccio/definitions") {
+		t.Fatalf("unexpected output %q", out.String())
+	}
+}
+
+func TestDownloadAddCommandPassesDirOverride(t *testing.T) {
+	dl := &stubDownloader{handle: &download.DownloadHandle{Provider: "transmission", ID: "42"}}
+	env := &commandEnv{
+		loadConfig: func(string) (*config.Config, error) {
+			return &config.Config{Download: config.DownloadConfig{Transmission: config.DownloadTransmissionConfig{URL: "http://transmission"}}}, nil
+		},
+		downloader: func(*config.Config) (download.Downloader, error) { return dl, nil },
+	}
+	cmd := env.downloadCommand()
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs([]string{"add", "--dir", "/media/movies", "magnet:?xt=urn:btih:abc"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if dl.addReq.URL != "magnet:?xt=urn:btih:abc" {
+		t.Fatalf("url = %q", dl.addReq.URL)
+	}
+	if dl.addReq.DownloadDir != "/media/movies" {
+		t.Fatalf("download dir = %q", dl.addReq.DownloadDir)
+	}
+	if !strings.Contains(out.String(), "Added transmission:42") {
 		t.Fatalf("unexpected output %q", out.String())
 	}
 }
