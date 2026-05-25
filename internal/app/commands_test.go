@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/sergiobonfiglio/tomaccio/internal/config"
-	"github.com/sergiobonfiglio/tomaccio/internal/definitions"
 	"github.com/sergiobonfiglio/tomaccio/internal/download"
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
 	"github.com/sergiobonfiglio/tomaccio/internal/watched"
+	tomagnetlib "github.com/sergiobonfiglio/tomagnet/pkg/tomagnet"
 )
 
 type stubProvider struct {
@@ -133,8 +133,8 @@ func TestWatchedCommandPrintsJSON(t *testing.T) {
 }
 
 func TestDefinitionsSyncCommandPrintsSyncedCount(t *testing.T) {
-	env := &commandEnv{definitionsSync: func() (definitions.Metadata, error) {
-		return definitions.Metadata{Files: []string{"yts.yml", "1337x.yml"}}, nil
+	env := &commandEnv{definitionsSync: func() (tomagnetlib.DefinitionsMetadata, error) {
+		return tomagnetlib.DefinitionsMetadata{Files: []string{"yts.yml", "1337x.yml"}}, nil
 	}}
 	cmd := env.definitionsCommand()
 	out := &bytes.Buffer{}
@@ -145,7 +145,7 @@ func TestDefinitionsSyncCommandPrintsSyncedCount(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if !strings.Contains(out.String(), "synced 2 definitions to .tomaccio/definitions") {
+	if !strings.Contains(out.String(), "synced 2 definitions") {
 		t.Fatalf("unexpected output %q", out.String())
 	}
 }

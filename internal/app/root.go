@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/sergiobonfiglio/tomaccio/internal/config"
-	"github.com/sergiobonfiglio/tomaccio/internal/definitions"
 	"github.com/sergiobonfiglio/tomaccio/internal/download"
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
 	"github.com/sergiobonfiglio/tomaccio/internal/watched"
+	tomagnetlib "github.com/sergiobonfiglio/tomagnet/pkg/tomagnet"
 )
 
 type commandEnv struct {
@@ -20,7 +20,7 @@ type commandEnv struct {
 	downloader      func(*config.Config) (download.Downloader, error)
 	searchProviders func(*config.Config) ([]search.Provider, []search.ProviderError)
 	watchedProvider func(*config.Config) (watched.Provider, error)
-	definitionsSync func() (definitions.Metadata, error)
+	definitionsSync func() (tomagnetlib.DefinitionsMetadata, error)
 }
 
 func NewRootCommand() *cobra.Command {
@@ -51,16 +51,12 @@ func (e *commandEnv) load(command string) (*config.Config, error) {
 }
 
 func setupLogging(level string) {
-	var slogLevel slog.Level
+	lvl := new(slog.LevelVar)
 	switch strings.ToLower(level) {
 	case "debug":
-		slogLevel = slog.LevelDebug
-	case "warn", "warning":
-		slogLevel = slog.LevelWarn
-	case "error":
-		slogLevel = slog.LevelError
+		lvl.Set(slog.LevelDebug)
 	default:
-		slogLevel = slog.LevelInfo
+		lvl.Set(slog.LevelInfo)
 	}
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slogLevel})))
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: lvl})))
 }

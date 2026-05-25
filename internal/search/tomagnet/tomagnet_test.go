@@ -22,7 +22,7 @@ func TestSearchMovieUsesLocalDefinition(t *testing.T) {
 	defer server.Close()
 
 	tempDir := t.TempDir()
-	definitionsDir := filepath.Join(tempDir, ".tomaccio", "definitions")
+	definitionsDir := filepath.Join(tempDir, ".tomagnet", "definitions")
 	if err := os.MkdirAll(definitionsDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestSearchMovieReportsMissingDefinition(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), "tomaccio definitions sync") {
+	if !strings.Contains(err.Error(), "definitions sync") {
 		t.Fatalf("error = %q", err.Error())
 	}
 }

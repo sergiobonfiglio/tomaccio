@@ -101,13 +101,13 @@ Environment variables in YAML are expanded when the config is loaded, so secrets
 
 Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). If `search.providers` is omitted, tomaccio uses the default public indexers: `yts`, `1337x`, and `thepiratebay`.
 
-Before the first public-indexer search, sync definitions into `./.tomaccio/definitions`:
+Before the first public-indexer search, sync definitions:
 
 ```bash
 tomaccio definitions sync
 ```
 
-Tomaccio loads synced definitions from `./.tomaccio/definitions/<indexer_id>.yml|yaml` and passes them to tomagnet in memory; no `.tomagnet/definitions` setup is required.
+Definition storage and loading are managed by tomagnet.
 
 Custom providers can be configured with:
 
@@ -122,7 +122,7 @@ Provider failures are printed as warnings while successful providers still retur
 
 ### `definitions sync`
 
-Download public indexer definitions into `./.tomaccio/definitions`.
+Sync public indexer definitions managed by tomagnet.
 
 ```bash
 tomaccio definitions sync
