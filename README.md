@@ -99,8 +99,7 @@ watched:
 Environment variables in YAML are expanded when the config is loaded, so secrets can stay out of files committed to git. If `download.label` is omitted, tomaccio defaults to the Transmission label `tomaccio`; set `download.label: ""` to disable labels entirely.
 ### Search providers
 
-Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). If `search.providers` is omitted, tomaccio uses the default public indexers: `yts`, `1337x`, and `thepiratebay`.
-
+Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). If `search.providers` is omitted, tomaccio uses the default public indexers from tomagnet.
 Before the first public-indexer search, sync definitions:
 
 ```bash
@@ -189,10 +188,10 @@ Search configured providers for a movie release.
 ```bash
 tomaccio search "The Matrix 1999"
 tomaccio search "The Matrix (1999)"
+tomaccio search --format json "The Matrix 1999"
 ```
 
-If the query ends with a year, tomaccio passes the title and year separately to the search provider.
-
+If the query ends with a year, tomaccio passes the title and year separately to the search provider. Text output is the default. Use `--format json` to emit the full search result, including provider errors.
 ### `watched`
 
 List watched movies from Plex.

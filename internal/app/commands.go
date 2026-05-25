@@ -136,7 +136,8 @@ func containsString(items []string, want string) bool {
 }
 
 func (e *commandEnv) searchCommand() *cobra.Command {
-	return &cobra.Command{Use: "search QUERY", Short: "Search configured movie release providers", Args: cobra.MinimumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	var format string
+	cmd := &cobra.Command{Use: "search QUERY", Short: "Search configured movie release providers", Args: cobra.MinimumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithTimeout(cmd.Context(), 45*time.Second)
 		defer cancel()
 		cfg, err := e.load("search")
@@ -145,23 +146,35 @@ func (e *commandEnv) searchCommand() *cobra.Command {
 		}
 		title, year := splitTitleYear(strings.Join(args, " "))
 		result := e.searchReleases(ctx, cfg, search.MovieSearchQuery{Title: title, Year: year})
-		for _, err := range result.Errors {
-			fmt.Fprintf(cmd.OutOrStdout(), "WARN provider error: provider=%s stage=%s message=%s\n", err.Provider, err.Stage, err.Message)
-		}
 
-		for i, r := range result.Releases {
-			fmt.Fprintf(cmd.OutOrStdout(),
-				"%d. %s (%s, seeders=%d, %.2fGB) %s\n",
-				i+1,
-				r.Title,
-				r.Provider,
-				r.Seeders,
-				// TODO: size in human-readable format, not fixed GB
-				float64(r.SizeBytes)/(1024*1024*1024),
-				r.URL)
+		switch format {
+		case "json":
+			enc := json.NewEncoder(cmd.OutOrStdout())
+			enc.SetIndent("", "  ")
+			return enc.Encode(result)
+		case "text", "":
+			for _, err := range result.Errors {
+				fmt.Fprintf(cmd.OutOrStdout(), "WARN provider error: provider=%s stage=%s message=%s\n", err.Provider, err.Stage, err.Message)
+			}
+
+			for i, r := range result.Releases {
+				fmt.Fprintf(cmd.OutOrStdout(),
+					"%d. %s (%s, seeders=%d, %.2fGB) %s\n",
+					i+1,
+					r.Title,
+					r.Provider,
+					r.Seeders,
+					// TODO: size in human-readable format, not fixed GB
+					float64(r.SizeBytes)/(1024*1024*1024),
+					r.URL)
+			}
+			return nil
+		default:
+			return fmt.Errorf("unsupported format %q", format)
 		}
-		return nil
 	}}
+	cmd.Flags().StringVar(&format, "format", "text", "output format: text or json")
+	return cmd
 }
 
 func (e *commandEnv) watchedCommand() *cobra.Command {

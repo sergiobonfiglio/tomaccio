@@ -92,7 +92,7 @@ func TestSearchCommandPrintsPartialResultsAndWarnings(t *testing.T) {
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 	cmd.SetErr(out)
-	cmd.SetArgs([]string{"The Matrix 1999"})
+	cmd.SetArgs([]string{"--format", "text", "The Matrix 1999"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
@@ -103,6 +103,36 @@ func TestSearchCommandPrintsPartialResultsAndWarnings(t *testing.T) {
 	}
 	if !strings.Contains(text, "WARN provider error: provider=provider-2 stage=search message=boom") {
 		t.Fatalf("missing warning in %q", text)
+	}
+}
+
+func TestSearchCommandPrintsJSON(t *testing.T) {
+	env := &commandEnv{loadConfig: func(string) (*config.Config, error) {
+		return &config.Config{Search: config.SearchConfig{Providers: []config.SearchProviderConfig{{Name: "stub", IndexerID: "stub"}}}}, nil
+	}, searchProviders: func(*config.Config) ([]search.Provider, []search.ProviderError) {
+		return []search.Provider{
+			stubProvider{releases: []search.Release{{Provider: "good", Title: "The Matrix 1999 1080p", URL: "magnet:?xt=urn:btih:abc", SizeBytes: 1024 * 1024 * 1024, Seeders: 42}}},
+			stubProvider{err: errors.New("boom")},
+		}, []search.ProviderError{{Provider: "bad-config", Stage: "create", Message: "unsupported"}}
+	}}
+	cmd := env.searchCommand()
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs([]string{"--format", "json", "The Matrix 1999"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	var got search.Result
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatalf("invalid json %q: %v", out.String(), err)
+	}
+	if len(got.Releases) != 1 || got.Releases[0].Title != "The Matrix 1999 1080p" {
+		t.Fatalf("releases=%#v", got.Releases)
+	}
+	if len(got.Errors) != 2 || got.Errors[0].Provider != "bad-config" || got.Errors[1].Message != "boom" {
+		t.Fatalf("errors=%#v", got.Errors)
 	}
 }
 
