@@ -77,6 +77,11 @@ func (c *Config) ApplyDefaults() {
 		label := "tomaccio"
 		c.Download.Label = &label
 	}
+	for i := range c.Search.Providers {
+		if c.Search.Providers[i].Name == "" {
+			c.Search.Providers[i].Name = c.Search.Providers[i].IndexerID
+		}
+	}
 }
 
 func (c *Config) Validate(command string) error {
@@ -109,9 +114,6 @@ func validateSearch(c *Config, missing *[]string) {
 	}
 	for i, p := range c.Search.Providers {
 		prefix := fmt.Sprintf("search.providers[%d]", i)
-		if p.Name == "" {
-			*missing = append(*missing, prefix+".name")
-		}
 		if p.IndexerID == "" {
 			*missing = append(*missing, prefix+".indexer_id")
 		}

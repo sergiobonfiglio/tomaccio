@@ -31,11 +31,26 @@ func TestValidateSearchAllowsDefaultPublicProviders(t *testing.T) {
 	}
 }
 
+func TestValidateSearchRequiresIndexerIDButNotName(t *testing.T) {
+	cfg := &Config{Search: SearchConfig{Providers: []SearchProviderConfig{{IndexerID: "thepiratebay"}}}}
+	if err := cfg.Validate("search"); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+}
+
 func TestApplyDefaultsSetsDefaultDownloadLabel(t *testing.T) {
 	cfg := &Config{}
 	cfg.ApplyDefaults()
 	if cfg.Download.Label == nil || *cfg.Download.Label != "tomaccio" {
 		t.Fatalf("label = %#v", cfg.Download.Label)
+	}
+}
+
+func TestApplyDefaultsSetsSearchProviderNameFromIndexerID(t *testing.T) {
+	cfg := &Config{Search: SearchConfig{Providers: []SearchProviderConfig{{IndexerID: "thepiratebay"}}}}
+	cfg.ApplyDefaults()
+	if got := cfg.Search.Providers[0].Name; got != "thepiratebay" {
+		t.Fatalf("provider name = %q", got)
 	}
 }
 

@@ -31,7 +31,11 @@ func newSearchProviders(cfg *config.Config) ([]search.Provider, []search.Provide
 
 	providers := make([]search.Provider, 0, len(cfg.Search.Providers))
 	for _, p := range cfg.Search.Providers {
-		providers = append(providers, tomagnetsearch.New(p.Name, p.IndexerID, p.BaseURL, p.TimeoutSeconds))
+		name := p.Name
+		if name == "" {
+			name = p.IndexerID
+		}
+		providers = append(providers, tomagnetsearch.New(name, p.IndexerID, p.BaseURL, p.TimeoutSeconds))
 	}
 	return providers, nil
 }

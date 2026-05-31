@@ -11,7 +11,24 @@ download:
     username: "${TRANSMISSION_USERNAME}"
     password: "${TRANSMISSION_PASSWORD}"
     download_dir: "/media/usb-drive/movies"
+
 # search.providers is optional. If omitted, tomaccio uses default public indexers.
+# Example: restrict search to a single explicit provider.
+# search:
+#   providers:
+#     - indexer_id: "thepiratebay"
+#
+# Example: configure multiple explicit providers with optional display names and overrides.
+# search:
+#   providers:
+#     - indexer_id: "thepiratebay"
+#     - name: "YTS"
+#       indexer_id: "yts"
+#       timeout_seconds: 10
+#     - name: "LimeTorrents mirror"
+#       indexer_id: "limetorrents"
+#       base_url: "https://www.limetorrents.lol/"
+
 watched:
   plex:
     url: "http://plex.example.com:32400"

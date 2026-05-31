@@ -90,6 +90,11 @@ download:
     download_dir: "/media/usb-drive/movies"
 
 # search.providers is optional. If omitted, tomaccio uses default public indexers.
+# Example:
+# search:
+#   providers:
+#     - indexer_id: "thepiratebay"
+
 watched:
   plex:
     url: "http://plex.example.com:32400"
@@ -110,10 +115,30 @@ Definition storage and loading are managed by tomagnet.
 
 Custom providers can be configured with:
 
-- `name`: display name used in results and warnings
+- `name`: optional display name used in results and warnings; defaults to `indexer_id`
 - `indexer_id`: tomagnet indexer definition id
 - `base_url`: optional indexer base URL override
 - `timeout_seconds`: optional per-provider timeout
+
+Examples:
+
+```yaml
+search:
+  providers:
+    - indexer_id: "thepiratebay"
+```
+
+```yaml
+search:
+  providers:
+    - indexer_id: "thepiratebay"
+    - name: "YTS"
+      indexer_id: "yts"
+      timeout_seconds: 10
+    - name: "LimeTorrents mirror"
+      indexer_id: "limetorrents"
+      base_url: "https://www.limetorrents.lol/"
+```
 
 Provider failures are printed as warnings while successful providers still return results.
 
