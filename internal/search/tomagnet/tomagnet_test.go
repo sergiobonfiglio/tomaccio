@@ -14,8 +14,16 @@ import (
 
 func TestSearchMovieUsesLocalDefinition(t *testing.T) {
 	var gotQuery string
+	var gotType string
+	var gotTitle string
+	var gotYear string
+	var gotTMDBID string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotQuery = r.URL.Query().Get("q")
+		gotType = r.URL.Query().Get("t")
+		gotTitle = r.URL.Query().Get("title")
+		gotYear = r.URL.Query().Get("year")
+		gotTMDBID = r.URL.Query().Get("tmdbid")
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"results":[{"title":"The Matrix 1999 1080p BluRay","magnet":"magnet:?xt=urn:btih:abc123","seeders":42,"leechers":7,"size":"2147483648","category":"Movies","published":"2026-05-20T12:00:00Z"}]}`))
 	}))
@@ -37,6 +45,12 @@ caps:
         - name: q
 search:
   path: /search
+  inputs:
+    q: "{{ .Keywords }}"
+    t: "{{ .Query.Type }}"
+    title: "{{ .Query.Title }}"
+    year: "{{ .Query.Year }}"
+    tmdbid: '{{ if ne .Query.TMDBID .False }}{{ .Query.TMDBID }}{{ end }}'
   rows:
     selector: results
   fields:
@@ -76,8 +90,20 @@ search:
 	if err != nil {
 		t.Fatal(err)
 	}
+	if gotType != "search" {
+		t.Fatalf("type = %q, want %q", gotType, "search")
+	}
 	if gotQuery != "The Matrix 1999" {
 		t.Fatalf("query = %q, want %q", gotQuery, "The Matrix 1999")
+	}
+	if gotTitle != "The Matrix" {
+		t.Fatalf("title = %q, want %q", gotTitle, "The Matrix")
+	}
+	if gotYear != "1999" {
+		t.Fatalf("year = %q, want %q", gotYear, "1999")
+	}
+	if gotTMDBID != "" {
+		t.Fatalf("tmdbid = %q, want empty", gotTMDBID)
 	}
 	if len(releases) != 1 {
 		t.Fatalf("len(releases) = %d, want 1", len(releases))

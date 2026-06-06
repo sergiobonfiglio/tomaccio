@@ -3,8 +3,6 @@ package tomagnet
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
@@ -31,14 +29,18 @@ func (c *Client) SearchMovie(ctx context.Context, q search.MovieSearchQuery) ([]
 	}
 
 	resp := tomagnetlib.Search(ctx, tomagnetlib.SearchOptions{
-		Query: buildQuery(q),
+		Query: tomagnetlib.Query{Movie: &tomagnetlib.MovieQuery{
+			Title:  q.Title,
+			Year:   q.Year,
+			IMDBID: q.IMDBID,
+			TMDBID: searchID(q.TMDBID),
+		}},
 		Indexers: []tomagnetlib.Indexer{{
 			ID:             c.indexerID,
 			BaseURL:        c.baseURL,
 			TimeoutSeconds: c.timeoutSeconds,
 			Definition:     definition,
 		}},
-		Concurrency: 1,
 	})
 	if len(resp.Errors) > 0 {
 		err := resp.Errors[0]
@@ -47,12 +49,12 @@ func (c *Client) SearchMovie(ctx context.Context, q search.MovieSearchQuery) ([]
 	out := make([]search.Release, 0, len(resp.Results))
 	for _, result := range resp.Results {
 		url := firstNonEmpty(result.MagnetURL, result.DownloadURL)
-		if url == "" || strings.TrimSpace(result.Title) == "" {
+		if url == "" || result.Title == "" {
 			continue
 		}
 		release := search.Release{
 			Provider:  c.name,
-			Title:     strings.TrimSpace(result.Title),
+			Title:     result.Title,
 			URL:       url,
 			SizeBytes: result.SizeBytes,
 			Seeders:   result.Seeders,
@@ -67,29 +69,18 @@ func (c *Client) SearchMovie(ctx context.Context, q search.MovieSearchQuery) ([]
 	return out, nil
 }
 
-func buildQuery(q search.MovieSearchQuery) string {
-	parts := []string{strings.TrimSpace(q.Title)}
-	if q.Year > 0 {
-		parts = append(parts, strconv.Itoa(q.Year))
-	}
-	query := strings.TrimSpace(strings.Join(parts, " "))
-	if query != "" {
-		return query
-	}
-	if q.IMDBID != "" {
-		return q.IMDBID
-	}
-	if q.TMDBID > 0 {
-		return strconv.Itoa(q.TMDBID)
-	}
-	return ""
-}
-
 func firstNonEmpty(values ...string) string {
 	for _, value := range values {
-		if strings.TrimSpace(value) != "" {
+		if value != "" {
 			return value
 		}
 	}
 	return ""
+}
+
+func searchID(id int) string {
+	if id <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", id)
 }
