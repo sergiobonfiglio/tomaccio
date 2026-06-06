@@ -104,7 +104,7 @@ watched:
 Environment variables in YAML are expanded when the config is loaded, so secrets can stay out of files committed to git. If `download.label` is omitted, tomaccio defaults to the Transmission label `tomaccio`; set `download.label: ""` to disable labels entirely.
 ### Search providers
 
-Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). If `search.providers` is omitted, tomaccio uses the default public indexers from tomagnet.
+Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). If `search.providers` is omitted, tomaccio uses tomagnet's default public indexers, currently `btdig`, `yts`, `limetorrents`, and `thepiratebay`.
 Before the first public-indexer search, sync definitions:
 
 ```bash

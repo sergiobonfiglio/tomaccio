@@ -23,7 +23,7 @@
 /legacy/
 /lodestar/
 /go.work
-
+/go.work.sum
 # OS/editor noise
 .DS_Store
 .vscode/
