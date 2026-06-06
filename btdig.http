@@ -1,0 +1,20 @@
+### BTDig search - plain
+GET https://btdig.com/search?q=due+spicci
+
+### BTDig search - wget-like headers
+GET https://btdig.com/search?q=due+spicci
+User-Agent: Wget/1.25.0
+Accept: */*
+Accept-Encoding: identity
+Connection: Keep-Alive
+
+### BTDig search - tomagnet request shape
+GET https://btdig.com/search?order=0&q=due+spicci
+User-Agent: tomagnet/0
+
+### BTDig search - custom definition headers + tomagnet query
+GET https://btdig.com/search?order=0&q=due+spicci
+User-Agent: Wget/1.25.0
+Accept: */*
+Accept-Encoding: identity
+Connection: Keep-Alive
