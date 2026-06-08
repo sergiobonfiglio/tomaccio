@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sergiobonfiglio/tomaccio/internal/definitions"
 	"github.com/sergiobonfiglio/tomaccio/internal/search"
 	tomagnetlib "github.com/sergiobonfiglio/tomagnet/pkg/tomagnet"
 )
@@ -23,7 +24,7 @@ func New(name, indexerID, baseURL string, timeoutSeconds int) *Client {
 func (c *Client) Name() string { return c.name }
 
 func (c *Client) SearchMovie(ctx context.Context, q search.MovieSearchQuery) ([]search.Release, error) {
-	definition, err := tomagnetlib.LoadDefinitionByID(c.indexerID)
+	definition, err := definitions.LoadByID(c.indexerID)
 	if err != nil {
 		return nil, err
 	}

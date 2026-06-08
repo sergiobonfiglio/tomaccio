@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.1.7] - 2026-06-08
+
+### Changed
+- Updated the `tomagnet` integration to use `github.com/sergiobonfiglio/tomagnet v0.3.8`.
+- `tomaccio definitions sync` now writes tomagnet-managed definitions to `.tomaccio/definitions`.
+- Tomagnet-backed search now reads definitions from `.tomaccio/definitions`.
+
 ## [v0.1.6] - 2026-06-08
 
 ### Removed

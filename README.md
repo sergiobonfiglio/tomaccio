@@ -111,7 +111,7 @@ Before the first public-indexer search, sync definitions:
 tomaccio definitions sync
 ```
 
-Definition storage and loading are managed by tomagnet.
+Definition contents and sync behavior are managed by tomagnet; tomaccio stores its local cache under `.tomaccio/definitions`.
 
 Custom providers can be configured with:
 
@@ -146,7 +146,7 @@ Provider failures are printed as warnings while successful providers still retur
 
 ### `definitions sync`
 
-Sync public indexer definitions managed by tomagnet.
+Sync public indexer definitions managed by tomagnet into `.tomaccio/definitions`.
 
 ```bash
 tomaccio definitions sync

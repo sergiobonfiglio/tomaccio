@@ -30,7 +30,7 @@ func TestSearchMovieUsesLocalDefinition(t *testing.T) {
 	defer server.Close()
 
 	tempDir := t.TempDir()
-	definitionsDir := filepath.Join(tempDir, ".tomagnet", "definitions")
+	definitionsDir := filepath.Join(tempDir, ".tomaccio", "definitions")
 	if err := os.MkdirAll(definitionsDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
