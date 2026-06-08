@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.1.5] - 2026-06-08
+
+### Changed
+- Updated the `tomagnet` integration to use `github.com/sergiobonfiglio/tomagnet v0.3.7`.
+
+### Fixed
+- `tomaccio definitions sync` now picks up tomagnet-bundled definitions such as `btdig` from the tomagnet release.
+
 ## [v0.1.4] - 2026-06-06
 
 ### Changed
