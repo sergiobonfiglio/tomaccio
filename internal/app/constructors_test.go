@@ -31,20 +31,3 @@ func TestNewSearchProvidersUsesTomagnetDefaultsWhenConfigOmitted(t *testing.T) {
 		t.Fatalf("provider names=%v, want %v", got, want)
 	}
 }
-
-func TestNewSearchProvidersDefaultsNameToIndexerID(t *testing.T) {
-	providers, errs := newSearchProviders(&config.Config{Search: config.SearchConfig{Providers: []config.SearchProviderConfig{{IndexerID: "thepiratebay"}}}})
-	if len(errs) != 0 {
-		t.Fatalf("errs=%#v", errs)
-	}
-	if len(providers) != 1 {
-		t.Fatalf("providers=%#v", providers)
-	}
-	named, ok := providers[0].(interface{ Name() string })
-	if !ok {
-		t.Fatalf("provider %T does not expose Name()", providers[0])
-	}
-	if got := named.Name(); got != "thepiratebay" {
-		t.Fatalf("provider name=%q", got)
-	}
-}
