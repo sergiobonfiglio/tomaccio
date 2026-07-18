@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.1.8] - 2026-06-09
+
+### Changed
+- Updated the `tomagnet` integration to use `github.com/sergiobonfiglio/tomagnet v0.3.9`.
+
 ## [v0.1.7] - 2026-06-08
 
 ### Changed
