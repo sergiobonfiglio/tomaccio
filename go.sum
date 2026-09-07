@@ -21,8 +21,8 @@ github.com/klauspost/compress v1.17.4/go.mod h1:/dCuZOvVtNoHsyb+cuJD3itjs3NbnF6K
 github.com/refraction-networking/utls v1.7.3 h1:L0WRhHY7Oq1T0zkdzVZMR6zWZv+sXbHB9zcuvsAEqCo=
 github.com/refraction-networking/utls v1.7.3/go.mod h1:TUhh27RHMGtQvjQq+RyO11P6ZNQNBb3N0v7wsEjKAIQ=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
-github.com/sergiobonfiglio/tomagnet v0.3.10 h1:B9EPWwVtT3iMuTUNHPI69POjbYMTpvD50L3/7BAJaq4=
-github.com/sergiobonfiglio/tomagnet v0.3.10/go.mod h1:tTr1h9h0G9Pcz8KJBtnrSnXrlYrmriHniIZFCTCMDtk=
+github.com/sergiobonfiglio/tomagnet v0.3.11 h1:pb/V82UqytrzcPN1x7bt83Z7qPJjL+btTRap4rpqllk=
+github.com/sergiobonfiglio/tomagnet v0.3.11/go.mod h1:tTr1h9h0G9Pcz8KJBtnrSnXrlYrmriHniIZFCTCMDtk=
 github.com/spf13/cobra v1.8.1 h1:e5/vxKd/rZsfSJMUX1agtjeTDf+qv1/JdBF8gg5k9ZM=
 github.com/spf13/cobra v1.8.1/go.mod h1:wHxEcudfqmLYa8iTfL+OuZPbBZkmvliBWKIezN3kD9Y=
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.1.10] - 2026-09-07
+
+### Changed
+- Updated the `tomagnet` integration to use `github.com/sergiobonfiglio/tomagnet v0.3.11`.
+
+### Fixed
+- Authenticated Cardigann providers can now resolve relative result links and return direct magnets after download `before` requests.
+
 ## [v0.1.9] - 2026-09-07
 
 ### Added
