@@ -35,7 +35,8 @@ type DownloadTransmissionConfig struct {
 }
 
 type SearchConfig struct {
-	Providers []SearchProviderConfig `yaml:"providers"`
+	TimeoutSeconds int                    `yaml:"timeout_seconds"`
+	Providers      []SearchProviderConfig `yaml:"providers"`
 }
 
 type SearchProviderConfig struct {
@@ -103,6 +104,9 @@ func (c *Config) ApplyDefaults() {
 	if c.Download.Label == nil {
 		label := "tomaccio"
 		c.Download.Label = &label
+	}
+	if c.Search.TimeoutSeconds <= 0 {
+		c.Search.TimeoutSeconds = 120
 	}
 	for i := range c.Search.Providers {
 		if c.Search.Providers[i].Name == "" {

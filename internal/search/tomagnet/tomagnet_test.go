@@ -237,6 +237,64 @@ search:
 	}
 }
 
+func TestSearchMovieIncludesResultEnrichmentError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"results":[{"title":"Legacy Result","details":"/topic/1"}]}`))
+		case "/topic/1":
+			w.Header().Set("Content-Type", "text/html")
+			_, _ = w.Write([]byte(`<html></html>`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	useTempDefinition(t, "legacy", `id: legacy
+name: Legacy Indexer
+links:
+  - https://example.invalid
+caps:
+  modes:
+    search: [q]
+search:
+  path: /search
+  inputs:
+    q: "{{ .Keywords }}"
+  rows:
+    selector: results
+  fields:
+    title:
+      selector: title
+    details:
+      selector: details
+    download:
+      selector: download
+download:
+  before:
+    pathselector:
+      selector: a.thanks
+      attribute: href
+  selectors:
+    - selector: a[href^="magnet:"]
+      attribute: href
+`)
+
+	client := New("legacy", "legacy", server.URL, 5, nil)
+	releases, err := client.SearchMovie(context.Background(), search.MovieSearchQuery{Title: "Legacy"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(releases) != 1 || releases[0].ResolutionError != "download before path not found" {
+		t.Fatalf("releases = %#v", releases)
+	}
+	if releases[0].URL != server.URL+"/topic/1" {
+		t.Fatalf("release URL = %q", releases[0].URL)
+	}
+}
+
 func TestApplyDefinitionSettingsRejectsUnknownSetting(t *testing.T) {
 	definition := &tomagnetlib.Definition{
 		ID:       "private",

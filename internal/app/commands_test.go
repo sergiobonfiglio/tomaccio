@@ -84,7 +84,7 @@ func TestSearchCommandPrintsPartialResultsAndWarnings(t *testing.T) {
 		return &config.Config{Search: config.SearchConfig{Providers: []config.SearchProviderConfig{{Name: "stub", IndexerID: "stub"}}}}, nil
 	}, searchProviders: func(*config.Config) ([]search.Provider, []search.ProviderError) {
 		return []search.Provider{
-			stubProvider{releases: []search.Release{{Provider: "good", Title: "The Matrix 1999 1080p", URL: "magnet:?xt=urn:btih:abc", SizeBytes: 1024 * 1024 * 1024, Seeders: 42}}},
+			stubProvider{releases: []search.Release{{Provider: "good", Title: "The Matrix 1999 1080p", URL: "magnet:?xt=urn:btih:abc", SizeBytes: 1024 * 1024 * 1024, Seeders: 42, ResolutionError: "detail request timed out"}}},
 			stubProvider{err: errors.New("boom")},
 		}, nil
 	}}
@@ -103,6 +103,9 @@ func TestSearchCommandPrintsPartialResultsAndWarnings(t *testing.T) {
 	}
 	if !strings.Contains(text, "WARN provider error: provider=provider-2 stage=search message=boom") {
 		t.Fatalf("missing warning in %q", text)
+	}
+	if !strings.Contains(text, `WARN result resolution: provider=good title="The Matrix 1999 1080p" message=detail request timed out`) {
+		t.Fatalf("missing result-resolution warning in %q", text)
 	}
 }
 

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.1.11] - 2026-09-07
+
+### Added
+- Added a configurable `search.timeout_seconds` deadline, defaulting to 120 seconds.
+- Search output now reports per-result direct-download resolution failures.
+
+### Changed
+- Updated the `tomagnet` integration to use `github.com/sergiobonfiglio/tomagnet v0.3.12`.
+- Detail enrichment now uses Tomagnet's bounded concurrency.
+
 ## [v0.1.10] - 2026-09-07
 
 ### Changed

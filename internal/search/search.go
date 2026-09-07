@@ -25,12 +25,13 @@ type MovieSearchQuery struct {
 }
 
 type Release struct {
-	Provider  string `json:"provider"`
-	Title     string `json:"title"`
-	URL       string `json:"url"`
-	SizeBytes int64  `json:"size_bytes"`
-	Seeders   int    `json:"seeders"`
-	Leechers  int    `json:"leechers"`
-	Category  string `json:"category"`
-	Published string `json:"published"`
+	Provider        string `json:"provider"`
+	Title           string `json:"title"`
+	URL             string `json:"url"`
+	SizeBytes       int64  `json:"size_bytes"`
+	Seeders         int    `json:"seeders"`
+	Leechers        int    `json:"leechers"`
+	Category        string `json:"category"`
+	Published       string `json:"published"`
+	ResolutionError string `json:"resolution_error,omitempty"`
 }

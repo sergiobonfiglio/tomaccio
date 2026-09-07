@@ -12,9 +12,11 @@ download:
     password: "${TRANSMISSION_PASSWORD}"
     download_dir: "/media/usb-drive/movies"
 
+# search.timeout_seconds controls the overall search deadline and defaults to 120.
 # search.providers is optional. If omitted, tomaccio uses default public indexers.
 # Example: restrict search to a single explicit provider.
 # search:
+#   timeout_seconds: 120
 #   providers:
 #     - indexer_id: "thepiratebay"
 #

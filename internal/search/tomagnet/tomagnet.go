@@ -64,7 +64,7 @@ func (c *Client) SearchMovie(ctx context.Context, q search.MovieSearchQuery) ([]
 	}
 	out := make([]search.Release, 0, len(resp.Results))
 	for _, result := range resp.Results {
-		url := firstNonEmpty(result.MagnetURL, result.DownloadURL)
+		url := firstNonEmpty(result.MagnetURL, result.DownloadURL, result.DetailsURL)
 		if url == "" || result.Title == "" {
 			continue
 		}
@@ -79,6 +79,9 @@ func (c *Client) SearchMovie(ctx context.Context, q search.MovieSearchQuery) ([]
 		}
 		if result.PublishedAt != nil {
 			release.Published = result.PublishedAt.UTC().Format(time.RFC3339)
+		}
+		if result.EnrichmentError != nil {
+			release.ResolutionError = redactSettingValues(result.EnrichmentError.Message, c.settings)
 		}
 		out = append(out, release)
 	}

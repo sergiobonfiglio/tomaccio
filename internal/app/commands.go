@@ -138,12 +138,16 @@ func containsString(items []string, want string) bool {
 func (e *commandEnv) searchCommand() *cobra.Command {
 	var format string
 	cmd := &cobra.Command{Use: "search QUERY", Short: "Search configured movie release providers", Args: cobra.MinimumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := context.WithTimeout(cmd.Context(), 45*time.Second)
-		defer cancel()
 		cfg, err := e.load("search")
 		if err != nil {
 			return err
 		}
+		timeoutSeconds := cfg.Search.TimeoutSeconds
+		if timeoutSeconds <= 0 {
+			timeoutSeconds = 120
+		}
+		ctx, cancel := context.WithTimeout(cmd.Context(), time.Duration(timeoutSeconds)*time.Second)
+		defer cancel()
 		title, year := splitTitleYear(strings.Join(args, " "))
 		result := e.searchReleases(ctx, cfg, search.MovieSearchQuery{Title: title, Year: year})
 
@@ -158,6 +162,9 @@ func (e *commandEnv) searchCommand() *cobra.Command {
 			}
 
 			for i, r := range result.Releases {
+				if r.ResolutionError != "" {
+					fmt.Fprintf(cmd.OutOrStdout(), "WARN result resolution: provider=%s title=%q message=%s\n", r.Provider, r.Title, r.ResolutionError)
+				}
 				fmt.Fprintf(cmd.OutOrStdout(),
 					"%d. %s (%s, seeders=%d, %.2fGB) %s\n",
 					i+1,

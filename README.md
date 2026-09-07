@@ -89,9 +89,11 @@ download:
     password: "${TRANSMISSION_PASSWORD}"
     download_dir: "/media/usb-drive/movies"
 
+# search.timeout_seconds controls the overall search deadline and defaults to 120.
 # search.providers is optional. If omitted, tomaccio uses default public indexers.
 # Example:
 # search:
+#   timeout_seconds: 120
 #   providers:
 #     - name: "Private indexer"
 #       indexer_id: "example"
@@ -110,7 +112,7 @@ Environment variables in YAML are expanded when the config is loaded, so secrets
 If `download.label` is omitted, tomaccio defaults to the Transmission label `tomaccio`; set `download.label: ""` to disable labels entirely.
 ### Search providers
 
-Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). If `search.providers` is omitted, tomaccio uses tomagnet's default public indexers, currently `btdig`, `yts`, `limetorrents`, and `thepiratebay`.
+Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). The overall search deadline is configured with `search.timeout_seconds` and defaults to 120 seconds. If `search.providers` is omitted, tomaccio uses tomagnet's default public indexers, currently `btdig`, `yts`, `limetorrents`, and `thepiratebay`.
 Before the first public-indexer search, sync definitions:
 
 ```bash
@@ -165,7 +167,7 @@ search:
         api_key: "${INDEXER_API_KEY}"
 ```
 
-Setting names depend on the selected Tomagnet definition. Scalar values such as checkbox options are passed as strings; quoting them is recommended. Export referenced variables in the runtime environment before invoking Tomaccio. Provider failures are printed as warnings while successful providers still return results. Configured setting values are not logged and are redacted from propagated provider errors.
+Setting names depend on the selected Tomagnet definition. Scalar values such as checkbox options are passed as strings; quoting them is recommended. Export referenced variables in the runtime environment before invoking Tomaccio. Provider failures and per-result download-resolution failures are printed as warnings while successful or partial results remain available. Configured setting values are not logged and are redacted from propagated errors.
 
 ## Commands
 

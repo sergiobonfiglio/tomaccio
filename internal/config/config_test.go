@@ -13,6 +13,7 @@ func TestLoadSearchProviderSettingsExpandsEnvironmentAndScalarValues(t *testing.
 
 	path := filepath.Join(t.TempDir(), "config.yaml")
 	if err := os.WriteFile(path, []byte(`search:
+  timeout_seconds: 240
   providers:
     - indexer_id: private
       settings:
@@ -27,6 +28,9 @@ func TestLoadSearchProviderSettingsExpandsEnvironmentAndScalarValues(t *testing.
 	cfg, err := Load(path)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if cfg.Search.TimeoutSeconds != 240 {
+		t.Fatalf("search timeout = %d, want 240", cfg.Search.TimeoutSeconds)
 	}
 	got := cfg.Search.Providers[0].Settings
 	want := map[string]string{
@@ -123,6 +127,14 @@ func TestApplyDefaultsSetsDefaultDownloadLabel(t *testing.T) {
 	cfg.ApplyDefaults()
 	if cfg.Download.Label == nil || *cfg.Download.Label != "tomaccio" {
 		t.Fatalf("label = %#v", cfg.Download.Label)
+	}
+}
+
+func TestApplyDefaultsSetsSearchTimeout(t *testing.T) {
+	cfg := &Config{}
+	cfg.ApplyDefaults()
+	if cfg.Search.TimeoutSeconds != 120 {
+		t.Fatalf("search timeout = %d, want 120", cfg.Search.TimeoutSeconds)
 	}
 }
 
