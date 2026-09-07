@@ -93,7 +93,11 @@ download:
 # Example:
 # search:
 #   providers:
-#     - indexer_id: "thepiratebay"
+#     - name: "Private indexer"
+#       indexer_id: "example"
+#       settings:
+#         username: "${INDEXER_USERNAME}"
+#         password: "${INDEXER_PASSWORD}"
 
 watched:
   plex:
@@ -101,7 +105,9 @@ watched:
     token: "${PLEX_TOKEN}"
 ```
 
-Environment variables in YAML are expanded when the config is loaded, so secrets can stay out of files committed to git. If `download.label` is omitted, tomaccio defaults to the Transmission label `tomaccio`; set `download.label: ""` to disable labels entirely.
+Environment variables in YAML are expanded when the config is loaded, so secrets can stay out of files committed to git. Loading fails with a clear error if a referenced variable is unset. Never write credentials or API keys directly in `config.yaml`. Keep any environment file outside the repository with restrictive permissions, such as `chmod 600 /path/to/tomaccio.env`.
+
+If `download.label` is omitted, tomaccio defaults to the Transmission label `tomaccio`; set `download.label: ""` to disable labels entirely.
 ### Search providers
 
 Search is powered by [`tomagnet`](https://github.com/sergiobonfiglio/tomagnet). If `search.providers` is omitted, tomaccio uses tomagnet's default public indexers, currently `btdig`, `yts`, `limetorrents`, and `thepiratebay`.
@@ -119,6 +125,7 @@ Custom providers can be configured with:
 - `indexer_id`: tomagnet indexer definition id
 - `base_url`: optional indexer base URL override
 - `timeout_seconds`: optional per-provider timeout
+- `settings`: optional string map for settings declared by the Tomagnet definition, including credentials, API keys, cookies, and indexer switches; unknown names are rejected
 
 Examples:
 
@@ -140,7 +147,25 @@ search:
       base_url: "https://www.limetorrents.lol/"
 ```
 
-Provider failures are printed as warnings while successful providers still return results.
+Authenticated and API-backed providers can supply definition settings using environment placeholders:
+
+```yaml
+search:
+  providers:
+    - name: "Private indexer"
+      indexer_id: "example"
+      timeout_seconds: 60
+      settings:
+        username: "${INDEXER_USERNAME}"
+        password: "${INDEXER_PASSWORD}"
+        freeleech: "false"
+    - name: "API indexer"
+      indexer_id: "example-api"
+      settings:
+        api_key: "${INDEXER_API_KEY}"
+```
+
+Setting names depend on the selected Tomagnet definition. Scalar values such as checkbox options are passed as strings; quoting them is recommended. Export referenced variables in the runtime environment before invoking Tomaccio. Provider failures are printed as warnings while successful providers still return results. Configured setting values are not logged and are redacted from propagated provider errors.
 
 ## Commands
 

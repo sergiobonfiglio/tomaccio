@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -38,10 +39,11 @@ type SearchConfig struct {
 }
 
 type SearchProviderConfig struct {
-	Name           string `yaml:"name"`
-	IndexerID      string `yaml:"indexer_id"`
-	BaseURL        string `yaml:"base_url"`
-	TimeoutSeconds int    `yaml:"timeout_seconds"`
+	Name           string            `yaml:"name"`
+	IndexerID      string            `yaml:"indexer_id"`
+	BaseURL        string            `yaml:"base_url"`
+	TimeoutSeconds int               `yaml:"timeout_seconds"`
+	Settings       map[string]string `yaml:"settings"`
 }
 
 type WatchedConfig struct {
@@ -61,12 +63,37 @@ func Load(path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read config %q: %w", path, err)
 	}
+	expanded, err := expandEnvironment(string(b))
+	if err != nil {
+		return nil, fmt.Errorf("expand config %q: %w", path, err)
+	}
 	var cfg Config
-	if err := yaml.Unmarshal([]byte(os.ExpandEnv(string(b))), &cfg); err != nil {
+	if err := yaml.Unmarshal([]byte(expanded), &cfg); err != nil {
 		return nil, fmt.Errorf("parse config %q: %w", path, err)
 	}
 	cfg.ApplyDefaults()
 	return &cfg, nil
+}
+
+func expandEnvironment(value string) (string, error) {
+	missing := map[string]bool{}
+	expanded := os.Expand(value, func(name string) string {
+		value, ok := os.LookupEnv(name)
+		if !ok {
+			missing[name] = true
+		}
+		return value
+	})
+	if len(missing) == 0 {
+		return expanded, nil
+	}
+
+	names := make([]string, 0, len(missing))
+	for name := range missing {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return "", fmt.Errorf("unset environment variable(s): %s", strings.Join(names, ", "))
 }
 
 func (c *Config) ApplyDefaults() {

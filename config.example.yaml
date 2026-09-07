@@ -28,6 +28,21 @@ download:
 #     - name: "LimeTorrents mirror"
 #       indexer_id: "limetorrents"
 #       base_url: "https://www.limetorrents.lol/"
+#
+# Authenticated indexers accept settings declared by their Tomagnet definition.
+# Keep credentials in environment variables; never write secrets directly in config.yaml.
+# search:
+#   providers:
+#     - name: "Private indexer"
+#       indexer_id: "example"
+#       settings:
+#         username: "${INDEXER_USERNAME}"
+#         password: "${INDEXER_PASSWORD}"
+#         freeleech: "false"
+#     - name: "API indexer"
+#       indexer_id: "example-api"
+#       settings:
+#         api_key: "${INDEXER_API_KEY}"
 
 watched:
   plex:

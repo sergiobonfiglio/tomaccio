@@ -1,9 +1,89 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestLoadSearchProviderSettingsExpandsEnvironmentAndScalarValues(t *testing.T) {
+	t.Setenv("TEST_INDEXER_USERNAME", "test-user")
+	t.Setenv("TEST_INDEXER_PASSWORD", "test-password")
+
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(path, []byte(`search:
+  providers:
+    - indexer_id: private
+      settings:
+        username: "${TEST_INDEXER_USERNAME}"
+        password: "${TEST_INDEXER_PASSWORD}"
+        freeleech: false
+        api_key: test-api-key
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := cfg.Search.Providers[0].Settings
+	want := map[string]string{
+		"username":  "test-user",
+		"password":  "test-password",
+		"freeleech": "false",
+		"api_key":   "test-api-key",
+	}
+	for name, value := range want {
+		if got[name] != value {
+			t.Errorf("settings[%q] = %q, want %q", name, got[name], value)
+		}
+	}
+}
+
+func TestLoadSearchProviderWithoutSettings(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(path, []byte("search:\n  providers:\n    - indexer_id: thepiratebay\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Search.Providers[0].Settings != nil {
+		t.Fatalf("settings = %#v, want nil", cfg.Search.Providers[0].Settings)
+	}
+}
+
+func TestLoadReportsUnsetEnvironmentVariable(t *testing.T) {
+	const name = "TOMACCIO_TEST_UNSET_INDEXER_PASSWORD"
+	old, wasSet := os.LookupEnv(name)
+	if err := os.Unsetenv(name); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if wasSet {
+			_ = os.Setenv(name, old)
+		} else {
+			_ = os.Unsetenv(name)
+		}
+	})
+
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(path, []byte("search:\n  providers:\n    - indexer_id: private\n      settings:\n        password: ${"+name+"}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Load(path)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), name) || strings.Contains(err.Error(), "password:") {
+		t.Fatalf("error = %q", err)
+	}
+}
 
 func TestValidateWatchedRequiresPlexConfig(t *testing.T) {
 	cfg := &Config{}
