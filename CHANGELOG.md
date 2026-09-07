@@ -2,11 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v0.1.9] - 2026-09-07
 
 ### Added
 - Search providers can now pass Tomagnet definition settings for authenticated logins, API keys, cookies, and optional indexer switches.
 - Configuration loading now reports referenced environment variables that are unset.
+
+### Changed
+- Updated the `tomagnet` integration to use `github.com/sergiobonfiglio/tomagnet v0.3.10`.
 
 ### Security
 - Provider setting values are redacted from propagated Tomagnet errors, including rendered request URLs.
