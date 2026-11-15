@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.1.12] - 2026-11-15
+
+### Changed
+- Updated the `tomagnet` integration to use `github.com/sergiobonfiglio/tomagnet v0.3.13`.
+
+### Fixed
+- Cached mirror selections are invalidated when definition links change.
+- Non-200 and empty search responses trigger mirror fallback rather than reporting zero results.
+
 ## [v0.1.11] - 2026-09-07
 
 ### Added
